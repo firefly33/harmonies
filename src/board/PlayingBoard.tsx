@@ -2,6 +2,7 @@ import {type ReactElement, useCallback, useEffect, useRef, useState} from 'react
 import { BiWater } from 'react-icons/bi';
 import {LuEarth, LuHouse, LuMountain, LuTrees} from "react-icons/lu";
 import { GiCorn } from 'react-icons/gi';
+import { canPlaceToken, type Token, type TokenType } from '../utils/can-be-placed';
 
 interface HexagonCoord {
   q: number;
@@ -13,17 +14,11 @@ interface PixelCoord {
   y: number;
 }
 
-type TokenType = 'tree' | 'house' | 'water' | 'mountain' | 'field' | 'brown';
-interface Token {
-  id: string;
-  type: TokenType;
-  color: string;
-}
 
 interface GridCell {
   coord: HexagonCoord;
   pixel: PixelCoord;
-    token: Token | null;
+  tokens: Token[];
   terrain:  'plain'; // | 'water' | 'forest' | 'mountain';
 }
 
@@ -86,6 +81,7 @@ const roundHex = (q: number, r: number): HexagonCoord => {
   return { q: rq, r: rr };
 };
 
+
 const drawHexagon = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
   ctx.beginPath();
   for (let i = 0; i < 6; i++) {
@@ -129,7 +125,7 @@ const PlayingBoard = () => {
       initialGrid.set(key, {
         coord,
         pixel,
-        token: null,
+        tokens: [],
         terrain: 'plain'
       });
     });
@@ -143,7 +139,7 @@ const PlayingBoard = () => {
 
     // Dessiner chaque cellule
     grid.forEach((cell, key) => {
-      const { pixel, token, terrain } = cell;
+      const { pixel, tokens, terrain } = cell;
 
       // Couleur de terrain
       const terrainColors = {
@@ -160,27 +156,61 @@ const PlayingBoard = () => {
       ctx.fillStyle = terrainColors[terrain];
       ctx.fill();
 
-      // Bordure
-      ctx.strokeStyle = hoveredCell === key ? '#FF6B6B' : '#333';
-      ctx.lineWidth = hoveredCell === key ? 3 : 1;
+      // Bordure avec indication de validité
+      let strokeColor = '#333';
+      let lineWidth = 1;
+
+      if (hoveredCell === key) {
+        if (selectedToken && !canPlaceToken(selectedToken, tokens)) {
+          strokeColor = '#FF0000'; // Rouge pour invalid
+          lineWidth = 3;
+        } else if (selectedToken) {
+          strokeColor = '#00FF00'; // Vert pour valid
+          lineWidth = 3;
+        } else {
+          strokeColor = '#FF6B6B'; // Rose pour hover sans token
+          lineWidth = 3;
+        }
+      }
+
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = lineWidth;
       ctx.stroke();
 
-      // Dessiner le token s'il existe
-      if (token) {
-        ctx.beginPath();
-        ctx.arc(pixel.x, pixel.y, HEX_SIZE * 0.6, 0, Math.PI * 2);
-        ctx.fillStyle = token.color;
-        ctx.fill();
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+      // Dessiner les tokens s'ils existent
+      if (tokens.length > 0) {
+        tokens.forEach((token, index) => {
+          // Offset pour créer un effet de pile
+          const offsetX = index * 3;
+          const offsetY = index * -3;
+          const radius = HEX_SIZE * 0.6 - (index * 2);
 
-        // Icône du token
-        ctx.fillStyle = '#FFF';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(token.type[0].toUpperCase(), pixel.x, pixel.y);
+          ctx.beginPath();
+          ctx.arc(pixel.x + offsetX, pixel.y + offsetY, Math.max(radius, 15), 0, Math.PI * 2);
+          ctx.fillStyle = token.color;
+          ctx.fill();
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // Icône du token (seulement pour le token du dessus)
+          if (index === tokens.length - 1) {
+            ctx.fillStyle = '#FFF';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(token.type[0].toUpperCase(), pixel.x + offsetX, pixel.y + offsetY);
+          }
+        });
+
+        // Afficher le nombre de tokens si plus d'un
+        if (tokens.length > 1) {
+          ctx.fillStyle = '#FF0000';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(tokens.length.toString(), pixel.x + HEX_SIZE * 0.5, pixel.y - HEX_SIZE * 0.5);
+        }
       }
 
       // Coordonnées pour debug
@@ -189,7 +219,7 @@ const PlayingBoard = () => {
       ctx.textAlign = 'center';
       ctx.fillText(`${cell.coord.q},${cell.coord.r}`, pixel.x, pixel.y + HEX_SIZE + 15);
     });
-  }, [grid, hoveredCell]);
+  }, [grid, hoveredCell, selectedToken]);
 
   // Effet de rendu
   useEffect(() => {
@@ -215,10 +245,10 @@ const PlayingBoard = () => {
     const key = `${hexCoord.q},${hexCoord.r}`;
     const cell = grid.get(key);
 
-    if (cell && !cell.token) {
+    if (cell && canPlaceToken(selectedToken, cell.tokens)) {
       setGrid(prev => {
         const newGrid = new Map(prev);
-        const updatedCell = { ...cell, token: selectedToken };
+        const updatedCell = { ...cell, tokens: [...cell.tokens, selectedToken] };
         newGrid.set(key, updatedCell);
         return newGrid;
       });
@@ -288,9 +318,19 @@ const PlayingBoard = () => {
             className="border-2 border-gray-400 rounded-lg shadow-lg cursor-pointer bg-white"
         />
 
-        <div className="mt-4 text-sm text-gray-600 max-w-md text-center">
-          <p>Sélectionnez un token puis cliquez sur une case vide pour le placer.</p>
-          <p>Les coordonnées hexagonales sont affichées sous chaque case.</p>
+        <div className="mt-4 text-sm text-gray-600 max-w-lg text-center">
+          <p>Sélectionnez un token puis cliquez sur une case pour le placer.</p>
+          <div className="mt-2 text-xs">
+            <p><strong>Règles d'empilement :</strong></p>
+            <ul className="text-left inline-block">
+              <li>• Maximum 3 tokens par pile</li>
+              <li>• Montagnes : empilables partout (3 max)</li>
+              <li>• Arbres : uniquement sur 1-2 tokens marron</li>
+              <li>• Champs/Eau : niveau sol uniquement</li>
+              <li>• Bâtiments : sol ou sur marron/montagne/bâtiment</li>
+            </ul>
+          </div>
+          <p className="mt-2">Bordure verte = placement valide, rouge = invalide</p>
         </div>
       </div>
   )
