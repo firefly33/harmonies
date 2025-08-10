@@ -3,24 +3,8 @@ import { BiWater } from 'react-icons/bi';
 import {LuEarth, LuHouse, LuMountain, LuTrees} from "react-icons/lu";
 import { GiCorn } from 'react-icons/gi';
 import { canPlaceToken, type Token, type TokenType } from '../utils/can-be-placed';
-
-interface HexagonCoord {
-  q: number;
-  r: number;
-}
-
-interface PixelCoord {
-  x: number;
-  y: number;
-}
-
-
-interface GridCell {
-  coord: HexagonCoord;
-  pixel: PixelCoord;
-  tokens: Token[];
-  terrain:  'plain'; // | 'water' | 'forest' | 'mountain';
-}
+import {calculatePoints, type GridCell, type HexCoord, type PixelCoord} from "../utils/points-calculation.ts";
+import {createGridBuilder} from "../utils/GridBuilder.ts";
 
 const HEX_SIZE = 50;
 const CANVAS_WIDTH = 1200;
@@ -29,7 +13,7 @@ const GRID_CENTER_X = CANVAS_WIDTH / 2;
 const GRID_CENTER_Y = CANVAS_HEIGHT / 2;
 
 // Grille hexagonale d'Harmonies - 23 cases (5-4-5-4-5 par colonne)
-const GRID_LAYOUT: HexagonCoord[] = [
+const GRID_LAYOUT: HexCoord[] = [
   // Colonne 1 (5 cases) - q = -2
   { q: -2, r: -1 }, { q: -2, r: 0 }, { q: -2, r: 1 }, { q: -2, r: 2 }, { q: -2, r: 3 },
   // Colonne 2 (4 cases) - q = -1
@@ -52,7 +36,7 @@ const hexToPixel = (q: number, r: number): PixelCoord => {
   };
 };
 
-const pixelToHex = (x: number, y: number): HexagonCoord => {
+const pixelToHex = (x: number, y: number): HexCoord => {
   const relativeX = x - GRID_CENTER_X;
   const relativeY = y - GRID_CENTER_Y;
 
@@ -62,7 +46,7 @@ const pixelToHex = (x: number, y: number): HexagonCoord => {
   return roundHex(q, r);
 };
 
-const roundHex = (q: number, r: number): HexagonCoord => {
+const roundHex = (q: number, r: number): HexCoord => {
   const s = -q - r;
   let rq = Math.round(q);
   let rr = Math.round(r);
@@ -116,6 +100,25 @@ const PlayingBoard = () => {
   // Initialisation de la grille
   useEffect(() => {
     const initialGrid = new Map<string, GridCell>();
+    const exempleGrid = createGridBuilder()
+    .placeWater(-2, -1)
+    .placeWater(-1, -1)
+    .placeWater(0, -2)
+    .placeWater(1, -2)
+    .placeWater(2, -2)
+    .placeWater(2, -1)
+    .placeWater(1, 1)
+    .placeWater(0, 2)
+    .placeWater(-1, 2)
+    .placeWater(-2, 2)
+    .placeWater(-2, 1)
+/*    .placeWater(1, 0)
+    .placeWater(1, -1)
+    .placeWater(0, -1)
+    .placeWater(-1, 0)
+    .placeWater(0, -2)
+    .placeWater(-1, 1)*/
+    .build();
 
     GRID_LAYOUT.forEach((coord, __index) => {
       const key = `${coord.q},${coord.r}`;
@@ -125,7 +128,7 @@ const PlayingBoard = () => {
       initialGrid.set(key, {
         coord,
         pixel,
-        tokens: [],
+        tokens: exempleGrid.get(key)?.tokens ?? [],
         terrain: 'plain'
       });
     });
@@ -307,6 +310,8 @@ const PlayingBoard = () => {
               Token sélectionné: <span className="font-semibold">{selectedToken.type}</span>
             </p>
         )}
+
+        <button onClick={() => calculatePoints(grid)}>End game</button>
 
         <canvas
             ref={canvasRef}
