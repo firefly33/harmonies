@@ -28,9 +28,45 @@ const HEX_DIRECTIONS: [number, number][] = [
 ];
 
 export const calculatePoints = (grid: Map<string, GridCell>): number => {
-  return calculateWaterPath(grid);
+  return calculateWaterPath(grid) + calculateMountainPaths(grid) + calculateFieldPaths(grid);
 };
 
+export const calculateMountainPaths  = (grid: Map<string, GridCell>): number => {
+  const mountainCells = Array.from(grid.values()).filter(
+      cell => cell.tokens.some((t: Token) => t.type === 'mountain')
+  );
+
+  if (mountainCells.length === 0) return 0;
+
+  console.log(`⚪️ Moutain cells ${mountainCells.map(w => `${w.coord.q},${w.coord.r}`).join(" ; ")}`)
+
+  const tokenType = 'mountain' as TokenType;
+  const groupsOfAtLeastTwoTokens = findConnectedGroups(grid, tokenType).filter(g => g.length > 1);
+  if (groupsOfAtLeastTwoTokens.length <= 0) {
+    return 0;
+  }
+
+  let count = 0;
+  groupsOfAtLeastTwoTokens.forEach((group) => {
+    const singleMountainChained = group.filter(g => g.tokens.length === 1 && g.tokens.some(t => t.type === 'mountain'));
+    const twoMountainChained = group.filter(g => g.tokens.length === 2 && g.tokens.some(t => t.type === 'mountain'));
+    const threeMountainChained = group.filter(g => g.tokens.length === 3 && g.tokens.some(t => t.type === 'mountain'));
+
+    if (singleMountainChained && singleMountainChained.length > 0) {
+      count += singleMountainChained.length
+    }
+
+    if (twoMountainChained && twoMountainChained.length > 0) {
+      count += twoMountainChained.length * 3
+    }
+
+    if (threeMountainChained && threeMountainChained.length > 0) {
+      count += threeMountainChained.length * 7
+    }
+  })
+
+  return count;
+}
 
 export const calculateFieldPaths = (grid: Map<string, GridCell>): number => {
   const fieldCells = Array.from(grid.values()).filter(
