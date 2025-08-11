@@ -31,6 +31,21 @@ export const calculatePoints = (grid: Map<string, GridCell>): number => {
   return calculateWaterPath(grid) + calculateMountainPaths(grid) + calculateFieldPaths(grid);
 };
 
+export const calculateForestPaths = (grid: Map<string, GridCell>): number => {
+  const forestCells = Array.from(grid.values()).filter(
+      cell => cell.tokens.some((t: Token) => t.type === 'tree')
+  );
+
+  if (forestCells.length === 0) return 0;
+
+  const oneLevelTowered = forestCells.filter(c => c.tokens.length === 2 && c.tokens.some((t: Token) => t.type === 'brown'));
+  const twoLevelTowered = forestCells.filter(c => c.tokens.length === 3 && c.tokens.some((t: Token) => t.type === 'brown'));
+
+  const groundLevelTowered = forestCells.length - oneLevelTowered.length - twoLevelTowered.length;
+
+  return (groundLevelTowered) + oneLevelTowered.length * 3 + twoLevelTowered.length * 7;
+}
+
 export const calculateMountainPaths  = (grid: Map<string, GridCell>): number => {
   const mountainCells = Array.from(grid.values()).filter(
       cell => cell.tokens.some((t: Token) => t.type === 'mountain')
@@ -38,7 +53,7 @@ export const calculateMountainPaths  = (grid: Map<string, GridCell>): number => 
 
   if (mountainCells.length === 0) return 0;
 
-  console.log(`⚪️ Moutain cells ${mountainCells.map(w => `${w.coord.q},${w.coord.r}`).join(" ; ")}`)
+  console.log(`⛰️ Moutain cells ${mountainCells.map(w => `${w.coord.q},${w.coord.r}`).join(" ; ")}`)
 
   const tokenType = 'mountain' as TokenType;
   const groupsOfAtLeastTwoTokens = findConnectedGroups(grid, tokenType).filter(g => g.length > 1);
@@ -75,7 +90,7 @@ export const calculateFieldPaths = (grid: Map<string, GridCell>): number => {
 
   if (fieldCells.length === 0) return 0;
 
-  console.log(`🟡 Field cells ${fieldCells.map(w => `${w.coord.q},${w.coord.r}`).join(" ; ")}`)
+  console.log(`🌻 Field cells ${fieldCells.map(w => `${w.coord.q},${w.coord.r}`).join(" ; ")}`)
 
 
   const tokenType = 'field' as TokenType;
@@ -98,7 +113,7 @@ export const calculateWaterPath = (grid: Map<string, GridCell>) => {
 
   if (waterCells.length === 0) return 0;
 
-  console.log(`🔵 Water cells ${waterCells.map(w => `${w.coord.q},${w.coord.r}`).join(" ; ")}`)
+  console.log(`🌊 Water cells ${waterCells.map(w => `${w.coord.q},${w.coord.r}`).join(" ; ")}`)
 
   const tokenType = 'water' as TokenType;
   const groups = findConnectedGroups(grid, tokenType);

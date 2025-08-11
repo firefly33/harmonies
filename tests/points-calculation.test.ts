@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {createEmptyGrid, createToken, GRID_LAYOUT } from '../src/utils/grid-utils';
-import {calculateFieldPaths, calculateMountainPaths, calculatePoints, calculateWaterPath, GridCell} from '../src/utils/points-calculation';
+import {calculateFieldPaths, calculateForestPaths, calculateMountainPaths, calculatePoints, calculateWaterPath, GridCell} from '../src/utils/points-calculation';
 import {createGridBuilder} from "../src/utils/GridBuilder";
 
 describe('Points Calculation', () => {
@@ -75,7 +75,7 @@ describe('Points Calculation', () => {
       expect(points).toBe(0);
     });
 
-    describe("🔵 for rivers", () => {
+    describe("🌊 for rivers", () => {
       it("should return 0 for one token of water", () => {
         const grid = createGridBuilder().build()
 
@@ -213,7 +213,7 @@ describe('Points Calculation', () => {
       });
     })
 
-    describe("🟡 for fields", () => {
+    describe("🌻 for fields", () => {
       it("should return 0 for one token of field", () => {
         const grid = createGridBuilder()
         .placeField(0, 0)
@@ -262,7 +262,7 @@ describe('Points Calculation', () => {
 
     })
 
-    describe("⚪️ for moutains", () => {
+    describe("⛰️ for moutains", () => {
       it("should return 0 for one token of moutains", () => {
         const grid = createGridBuilder()
         .placeMountain(0, 0)
@@ -331,7 +331,7 @@ describe('Points Calculation', () => {
       });
     })
 
-    describe("🔵🟡⚪️ for the above", () => {
+    describe("🌊🌻⛰️️ for the above", () => {
       it("should return 31 for a board of mountains, rivers and fields", () => {
         const grid = createGridBuilder()
           .placeMountain(0, 0)
@@ -359,5 +359,64 @@ describe('Points Calculation', () => {
         expect(points).toBe(31)
       });
     });
+
+    describe("🌳 for forests", () => {
+      it("should return 0 for no token of forest", () => {
+        const grid = createGridBuilder()
+        .build()
+
+        const points = calculateForestPaths(grid);
+
+        expect(points).toBe(0)
+      });
+
+      it("should return 1 for one token of forest", () => {
+        const grid = createGridBuilder()
+          .placeTree(0, 0)
+          .build()
+
+        const points = calculateForestPaths(grid);
+
+        expect(points).toBe(1)
+      });
+
+      it("should return 3 for one token of forest over one dirt", () => {
+        const grid = createGridBuilder()
+        .placeBrown(0, 0)
+        .placeTree(0, 0)
+        .build()
+
+        const points = calculateForestPaths(grid);
+
+        expect(points).toBe(3)
+      });
+
+      it("should return 7 for one token of forest over two dirts", () => {
+        const grid = createGridBuilder()
+        .placeBrown(0, 0)
+        .placeBrown(0, 0)
+        .placeTree(0, 0)
+        .build()
+
+        const points = calculateForestPaths(grid);
+
+        expect(points).toBe(7)
+      });
+
+      it("should return 11 for complex", () => {
+        const grid = createGridBuilder()
+        .placeBrown(0, 0)
+        .placeBrown(0, 0)
+        .placeTree(0, 0)
+        .placeBrown(1, 1)
+        .placeTree(1, 1)
+        .placeTree(-1, -1)
+        .build()
+
+        const points = calculateForestPaths(grid);
+
+        expect(points).toBe(11)
+      });
+    })
   });
 });
