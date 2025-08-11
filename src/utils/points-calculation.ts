@@ -31,6 +31,30 @@ export const calculatePoints = (grid: Map<string, GridCell>): number => {
   return calculateWaterPath(grid);
 };
 
+
+export const calculateFieldPaths = (grid: Map<string, GridCell>): number => {
+  const fieldCells = Array.from(grid.values()).filter(
+      cell => cell.tokens.some((t: Token) => t.type === 'field')
+  );
+
+  if (fieldCells.length === 0) return 0;
+
+  console.log(`🟡 Field cells ${fieldCells.map(w => `${w.coord.q},${w.coord.r}`).join(" ; ")}`)
+
+
+  const tokenType = 'field' as TokenType;
+  const groups = findConnectedGroups(grid, tokenType);
+  if (groups.length <= 0) {
+    return 0;
+  }
+
+  const groupsBySizeAndGreaterToTwo = groups
+    .filter(g => g.length >= 2);
+
+  return groupsBySizeAndGreaterToTwo.length * 5;
+}
+
+
 export const calculateWaterPath = (grid: Map<string, GridCell>) => {
   const waterCells = Array.from(grid.values()).filter(
       cell => cell.tokens.some((t: Token) => t.type === 'water')

@@ -1,7 +1,6 @@
 import {describe, it, expect} from 'vitest';
-import {GridCell} from '../src/board/PlayingBoard';
-import {createEmptyGrid, createToken, GRID_LAYOUT, placeAToken} from '../src/utils/grid-utils';
-import {calculatePoints, calculateWaterPath} from '../src/utils/points-calculation';
+import {createEmptyGrid, createToken, GRID_LAYOUT } from '../src/utils/grid-utils';
+import {calculateFieldPaths, calculatePoints, calculateWaterPath, GridCell} from '../src/utils/points-calculation';
 import {createGridBuilder} from "../src/utils/GridBuilder";
 
 describe('Points Calculation', () => {
@@ -212,6 +211,55 @@ describe('Points Calculation', () => {
 
         expect(points).toBe(15)
       });
+    })
+
+    describe("🟡 for fields", () => {
+      it("should return 0 for one token of field", () => {
+        const grid = createGridBuilder()
+        .placeField(0, 0)
+        .build()
+
+        const points = calculateFieldPaths(grid);
+
+        expect(points).toBe(0)
+      });
+
+      it("should return 5 for two tokens of field", () => {
+        const grid = createGridBuilder()
+        .placeField(0, 0)
+        .placeField(0, 1)
+        .build()
+
+        const points = calculateFieldPaths(grid);
+
+        expect(points).toBe(5)
+      });
+
+      it("should return 5 for two tokens of field", () => {
+        const grid = createGridBuilder()
+        .placeField(0, 0)
+        .placeField(0, 1)
+        .placeField(0, 2)
+        .build()
+
+        const points = calculateFieldPaths(grid);
+
+        expect(points).toBe(5)
+      });
+
+      it("should return 10 for four tokens of field", () => {
+        const grid = createGridBuilder()
+        .placeField(0, 0)
+        .placeField(0, 1)
+        .placeField(2, 0)
+        .placeField(2, 1)
+        .build()
+
+        const points = calculateFieldPaths(grid);
+
+        expect(points).toBe(10)
+      });
+
     })
   });
 });
