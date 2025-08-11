@@ -28,7 +28,7 @@ const HEX_DIRECTIONS: [number, number][] = [
 ];
 
 export const calculatePoints = (grid: Map<string, GridCell>): number => {
-  return calculateWaterPath(grid) + calculateMountainPaths(grid) + calculateFieldPaths(grid);
+  return calculateWaterPath(grid) + calculateMountainPaths(grid) + calculateFieldPaths(grid) + calculateForestPaths(grid);
 };
 
 export const calculateForestPaths = (grid: Map<string, GridCell>): number => {

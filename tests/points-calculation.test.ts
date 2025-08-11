@@ -418,5 +418,37 @@ describe('Points Calculation', () => {
         expect(points).toBe(11)
       });
     })
+
+    describe("🌊🌻⛰️️🌳 for the above", () => {
+      it("should return 34 for a board of mountains, rivers and fields", () => {
+        const grid = createGridBuilder()
+        .placeMountain(0, 0)
+        .placeMountain(0, 0)
+        .placeMountain(0, 0)
+        .placeMountain(0, 1)
+        .placeMountain(-1, -1)
+        .placeMountain(-1, -1)
+        .placeMountain(2, 1)
+        .placeMountain(2, 1)
+        .placeMountain(-2, -1)
+        .placeMountain(0, 1)
+        .placeMountain(0, 2)
+        .placeWater(2, -3)
+        .placeWater(1, -2)
+        .placeWater(0, -1)
+        .placeWater(-1, 0)
+        .placeWater(-2, 0)
+        .placeField(2, -2)
+        .placeField(2, -1)
+        .placeBrown(-1, 2)
+        .placeTree(-1, 2)
+        .build()
+
+        const points = calculatePoints(grid);
+
+        expect(points).toBe(34)
+      });
+    });
+
   });
 });
