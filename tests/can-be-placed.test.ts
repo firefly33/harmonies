@@ -169,9 +169,20 @@ describe('canPlaceToken', () => {
       const brown = createToken('brown');
 
       expect(canPlaceToken(brown, [])).toBe(true);
-      expect(canPlaceToken(brown, [createToken('mountain')])).toBe(true);
-      expect(canPlaceToken(brown, [createToken('brown'), createToken('tree')])).toBe(true);
+      expect(canPlaceToken(brown, [createToken('mountain')])).toBe(false);
+      expect(canPlaceToken(brown, [createToken('brown')])).toBe(true);
+      expect(canPlaceToken(brown, [createToken('brown'), createToken('tree')])).toBe(false);
       expect(canPlaceToken(brown, [createToken('brown'), createToken('brown'), createToken('brown')])).toBe(false);
+    });
+
+    it('should allow brown only on brown', () => {
+      const tokenTypes: Token['type'][] = ['tree', 'house', 'water', 'field', 'mountain'];
+
+      tokenTypes.forEach(type => {
+        const existingTokens = [createToken(type)];
+        const mountain = createToken('brown');
+        expect(canPlaceToken(mountain, existingTokens)).toBe(false);
+      });
     });
   });
 
