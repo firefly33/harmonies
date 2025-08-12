@@ -96,29 +96,35 @@ const PlayingBoard = () => {
   const [grid, setGrid] = useState<Map<string, GridCell>>(new Map());
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [hoveredCell, setHoveredCell] = useState<string | null>(null);
+  const [totalPoints, setTotalPoints] = useState<number>();
 
   // Initialisation de la grille
   useEffect(() => {
     const initialGrid = new Map<string, GridCell>();
-    const exempleGrid = createGridBuilder()
-    .placeWater(-2, -1)
-    .placeWater(-1, -1)
-    .placeWater(0, -2)
+    const exempleGrid = initialGrid;
+    /*createGridBuilder()
+    .placeMountain(0, 0)
+    .placeMountain(0, 0)
+    .placeMountain(0, 0)
+    .placeMountain(0, 1)
+    .placeMountain(-1, -1)
+    .placeMountain(-1, -1)
+    .placeMountain(2, 1)
+    .placeMountain(2, 1)
+    .placeMountain(-2, -1)
+    .placeMountain(0, 1)
+    .placeMountain(0, 2)
+    .placeWater(2, -3)
     .placeWater(1, -2)
-    .placeWater(2, -2)
-    .placeWater(2, -1)
-    .placeWater(1, 1)
-    .placeWater(0, 2)
-    .placeWater(-1, 2)
-    .placeWater(-2, 2)
-    .placeWater(-2, 1)
-/*    .placeWater(1, 0)
-    .placeWater(1, -1)
     .placeWater(0, -1)
     .placeWater(-1, 0)
-    .placeWater(0, -2)
-    .placeWater(-1, 1)*/
-    .build();
+    .placeWater(-2, 0)
+    .placeField(2, -2)
+    .placeField(2, -1)
+    .placeBrown(-1, 2)
+    .placeTree(-1, 2)
+    .placeHouse(1, -1)
+      .build();*/
 
     GRID_LAYOUT.forEach((coord, __index) => {
       const key = `${coord.q},${coord.r}`;
@@ -135,6 +141,10 @@ const PlayingBoard = () => {
 
     setGrid(initialGrid);
   }, []);
+
+  useEffect(() => {
+    setTotalPoints(calculatePoints(grid))
+  }, [grid]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
     // Effacer le canvas
@@ -311,7 +321,7 @@ const PlayingBoard = () => {
             </p>
         )}
 
-        <button onClick={() => calculatePoints(grid)}>End game</button>
+        <h2>Total points : {totalPoints}</h2>
 
         <canvas
             ref={canvasRef}
