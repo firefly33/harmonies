@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {createEmptyGrid, createToken, GRID_LAYOUT } from '../src/utils/grid-utils';
-import {calculateFieldPaths, calculateForestPaths, calculateMountainPaths, calculatePoints, calculateWaterPath, GridCell} from '../src/utils/points-calculation';
+import {calculateFieldPaths, calculateForestPaths, calculateHousePaths, calculateMountainPaths, calculatePoints, calculateWaterPath, GridCell} from '../src/utils/points-calculation';
 import {createGridBuilder} from "../src/utils/GridBuilder";
 
 describe('Points Calculation', () => {
@@ -450,5 +450,92 @@ describe('Points Calculation', () => {
       });
     });
 
+    describe("🏠 for houses", () => {
+      it("should return 0 for nothing around a house", () => {
+        const grid = createGridBuilder()
+        .placeHouse(0, 0)
+        .build()
+
+        const points = calculateHousePaths(grid);
+
+        expect(points).toBe(0)
+      });
+
+      it("should return 5 for at least 3 different tokens around a house", () => {
+        const grid = createGridBuilder()
+        .placeHouse(-2, 1)
+        .placeField(-2, 2)
+        .placeMountain(-1, 1)
+        .placeWater(-1, 0)
+        .debug()
+        .build()
+
+        const points = calculateHousePaths(grid);
+
+        expect(points).toBe(5)
+      });
+
+      it("should return 5 for at least 3 different stacked tokens around a house", () => {
+        const grid = createGridBuilder()
+        .placeHouse(-2, 1)
+        .placeField(-2, 2)
+        .placeMountain(-1, 1)
+        .placeWater(-1, 0)
+        .debug()
+        .build()
+
+        const points = calculateHousePaths(grid);
+
+        expect(points).toBe(5)
+      });
+
+      it("should return 10 for at least 3 different tokens around two houses", () => {
+        const grid = createGridBuilder()
+        .placeHouse(-2, 1)
+        .placeField(-2, 2)
+        .placeMountain(-1, 1)
+        .placeWater(-1, 0)
+        .placeHouse(0, 0)
+        .placeTree(1, -1)
+        .debug()
+        .build()
+
+        const points = calculateHousePaths(grid);
+
+        expect(points).toBe(10)
+      });
+    })
+
+    describe("🌊🌻⛰️️🌳🏠 for the above", () => {
+      it("should return 39 for a board of mountains, rivers, fields and houses", () => {
+        const grid = createGridBuilder()
+        .placeMountain(0, 0)
+        .placeMountain(0, 0)
+        .placeMountain(0, 0)
+        .placeMountain(0, 1)
+        .placeMountain(-1, -1)
+        .placeMountain(-1, -1)
+        .placeMountain(2, 1)
+        .placeMountain(2, 1)
+        .placeMountain(-2, -1)
+        .placeMountain(0, 1)
+        .placeMountain(0, 2)
+        .placeWater(2, -3)
+        .placeWater(1, -2)
+        .placeWater(0, -1)
+        .placeWater(-1, 0)
+        .placeWater(-2, 0)
+        .placeField(2, -2)
+        .placeField(2, -1)
+        .placeBrown(-1, 2)
+        .placeTree(-1, 2)
+        .placeHouse(1, -1)
+        .build()
+
+        const points = calculatePoints(grid);
+
+        expect(points).toBe(39)
+      });
+    });
   });
 });

@@ -1,5 +1,5 @@
 import type {Token, TokenType} from './can-be-placed';
-import {findConnectedGroups} from "./GridBuilder.ts";
+import {findConnectedGroups, getNeighborCoords} from "./GridBuilder.ts";
 
 export interface HexCoord {
   q: number;
@@ -28,8 +28,38 @@ const HEX_DIRECTIONS: [number, number][] = [
 ];
 
 export const calculatePoints = (grid: Map<string, GridCell>): number => {
-  return calculateWaterPath(grid) + calculateMountainPaths(grid) + calculateFieldPaths(grid) + calculateForestPaths(grid);
+  return calculateWaterPath(grid) + calculateMountainPaths(grid) + calculateFieldPaths(grid) + calculateForestPaths(grid) + calculateHousePaths(grid);
 };
+
+export const calculateHousePaths = (grid: Map<string, GridCell>): number => {
+  const houseCells = Array.from(grid.values()).filter(
+      cell => cell.tokens.some((t: Token) => t.type === 'house')
+  );
+
+  if (houseCells.length === 0) return 0;
+
+  const housesCircledByThreeDifferentTokens: GridCell[] = [];
+
+  houseCells.forEach(cell => {
+    const neighborCells = getNeighborCoords(cell.coord.q, cell.coord.r);
+
+    const tokenTypesAround: Set<TokenType> = new Set<TokenType>();
+    neighborCells.forEach(c => {
+      const cell = grid.get(`${c.q},${c.r}`);
+      if (!cell) return;
+      const highestStackedToken = cell.tokens[cell.tokens.length - 1];
+
+      if (highestStackedToken) tokenTypesAround.add(highestStackedToken.type)
+    })
+
+    if (tokenTypesAround.size === 3) {
+      console.log("Il est bien entouré...")
+      housesCircledByThreeDifferentTokens.push(cell)
+    }
+  })
+
+  return housesCircledByThreeDifferentTokens.length * 5;
+}
 
 export const calculateForestPaths = (grid: Map<string, GridCell>): number => {
   const forestCells = Array.from(grid.values()).filter(
@@ -104,7 +134,6 @@ export const calculateFieldPaths = (grid: Map<string, GridCell>): number => {
 
   return groupsBySizeAndGreaterToTwo.length * 5;
 }
-
 
 export const calculateWaterPath = (grid: Map<string, GridCell>) => {
   const waterCells = Array.from(grid.values()).filter(
