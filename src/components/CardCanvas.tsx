@@ -8,7 +8,7 @@ interface CardCanvasProps {
   hexSize?: number;
 }
 
-const CardCanvas = ({ pattern, width = 150, height = 120, hexSize = 12 }: CardCanvasProps) => {
+const CardCanvas = ({ pattern, width = 220, height = 180, hexSize = 18 }: CardCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const hexToPixel = useCallback((q: number, r: number, centerX: number, centerY: number) => {
@@ -50,13 +50,30 @@ const CardCanvas = ({ pattern, width = 150, height = 120, hexSize = 12 }: CardCa
     // Draw each cell in the pattern
     pattern.cells.forEach(cell => {
       const pixel = hexToPixel(cell.coord.q, cell.coord.r, centerX, centerY);
+      
+      // Check if this is the placement cell
+      const isPlacementCell = cell.coord.q === pattern.placementCell.q && 
+                             cell.coord.r === pattern.placementCell.r;
 
       // Draw hexagon background
       drawHexagon(ctx, pixel.x, pixel.y, hexSize);
-      ctx.fillStyle = '#F5DEB3'; // Plain terrain color
+      
+      // Use special color for placement cell
+      if (isPlacementCell) {
+        ctx.fillStyle = '#FFE4B5'; // Light yellow/beige for placement cell
+      } else {
+        ctx.fillStyle = '#F5DEB3'; // Plain terrain color
+      }
       ctx.fill();
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 1;
+      
+      // Special border for placement cell
+      if (isPlacementCell) {
+        ctx.strokeStyle = '#FF6B35'; // Orange border for placement cell
+        ctx.lineWidth = 2;
+      } else {
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+      }
       ctx.stroke();
 
       // Draw tokens if they exist
@@ -76,9 +93,9 @@ const CardCanvas = ({ pattern, width = 150, height = 120, hexSize = 12 }: CardCa
           ctx.stroke();
 
           // Show icon for top token only
-          if (index === cell.tokens.length - 1 && radius > 6) {
+          if (index === cell.tokens.length - 1 && radius > 8) {
             ctx.fillStyle = '#FFF';
-            ctx.font = `${Math.max(6, hexSize * 0.4)}px Arial`;
+            ctx.font = `bold ${Math.max(8, hexSize * 0.5)}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(token.type[0].toUpperCase(), pixel.x + offsetX, pixel.y + offsetY);
@@ -86,9 +103,9 @@ const CardCanvas = ({ pattern, width = 150, height = 120, hexSize = 12 }: CardCa
         });
 
         // Stack count indicator
-        if (cell.tokens.length > 1 && hexSize > 8) {
+        if (cell.tokens.length > 1 && hexSize > 10) {
           ctx.fillStyle = '#FF0000';
-          ctx.font = `${Math.max(4, hexSize * 0.3)}px Arial`;
+          ctx.font = `bold ${Math.max(6, hexSize * 0.35)}px Arial`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(
@@ -97,6 +114,15 @@ const CardCanvas = ({ pattern, width = 150, height = 120, hexSize = 12 }: CardCa
             pixel.y - hexSize * 0.4
           );
         }
+      }
+
+      // Add animal icon on placement cell
+      if (isPlacementCell && hexSize > 10) {
+        ctx.fillStyle = '#8B4513'; // Brown color for animal
+        ctx.font = `bold ${Math.max(12, hexSize * 0.8)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🐾', pixel.x, pixel.y - hexSize * 0.8); // Paw print emoji above cell
       }
     });
   }, [pattern, width, height, hexSize, hexToPixel, drawHexagon]);
@@ -116,7 +142,7 @@ const CardCanvas = ({ pattern, width = 150, height = 120, hexSize = 12 }: CardCa
       ref={canvasRef}
       width={width}
       height={height}
-      className="border border-gray-300 rounded"
+      className="border-b border-gray-300"
       style={{
         imageRendering: 'crisp-edges',
         maxWidth: '100%',

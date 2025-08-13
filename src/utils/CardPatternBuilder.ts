@@ -30,6 +30,8 @@ interface CardBuilder {
   addCell(q: number, r: number, tokenTypes: TokenType[]): CardBuilder;
   withDescription(description: string): CardBuilder;
   withImage(image: string): CardBuilder;
+  withPlacementCell(q: number, r: number): CardBuilder;
+  withMaxUsage(maxUsage: number): CardBuilder;
   build(): Card;
 }
 
@@ -37,9 +39,10 @@ class CardBuilderImpl implements CardBuilder {
   private cells: Array<{ q: number; r: number; tokenTypes: TokenType[] }> = [];
   private description?: string;
   private image?: string;
+  private placementCell?: { q: number; r: number };
+  private maxUsage: number = 1;
 
   private id: string;
-
   private animalName: string;
 
   constructor(
@@ -65,13 +68,25 @@ class CardBuilderImpl implements CardBuilder {
     return this;
   }
 
+  withPlacementCell(q: number, r: number): CardBuilder {
+    this.placementCell = { q, r };
+    return this;
+  }
+
+  withMaxUsage(maxUsage: number): CardBuilder {
+    this.maxUsage = maxUsage;
+    return this;
+  }
+
   build(): Card {
     return {
       id: this.id,
       animalName: this.animalName,
       description: this.description,
       image: this.image,
-      pattern: createCardPattern(this.cells)
+      pattern: createCardPattern(this.cells, this.placementCell),
+      maxUsage: this.maxUsage,
+      currentUsage: 0
     };
   }
 }
@@ -130,13 +145,16 @@ export const createQuickCard = (
   id: string,
   animalName: string,
   template: keyof typeof PatternTemplates,
+  maxUsage: number = 1,
   ...args: any[]
 ): Card => {
   const pattern = (PatternTemplates[template] as any)(...args);
   return {
     id,
     animalName,
-    pattern: createCardPattern(pattern)
+    pattern: createCardPattern(pattern, { q: 0, r: 0 }), // Default to center placement
+    maxUsage,
+    currentUsage: 0
   };
 };
 
@@ -146,18 +164,22 @@ export const ExampleCards = {
     .addCell(0, 0, ['water'])
     .addCell(0, 1, ['water'])
     .addCell(1, 0, ['mountain', 'mountain'])
+    .withPlacementCell(1, 0)  // Placed on the stacked mountain
+    .withMaxUsage(1)
     .withDescription('Un prédateur solitaire des rivières et montagnes')
     .build(),
 
-  rabbit: createQuickCard('rabbit', 'Lapin', 'horizontalLine', ['field', 'brown', 'field']),
+  rabbit: createQuickCard('rabbit', 'Lapin', 'horizontalLine', 3, ['field', 'brown', 'field']),
 
-  eagle: createQuickCard('eagle', 'Aigle', 'cross', 'mountain', 'water'),
+  eagle: createQuickCard('eagle', 'Aigle', 'cross', 2, 'mountain', 'water'),
 
   beaver: createAnimalCard('beaver', 'Castor')
-    .addCell(0, 0, ['water'])
+    .addCell(0, 0, ['water'])           // Placed on water
     .addCell(-1, 1, ['water'])
     .addCell(1, -1, ['brown', 'tree'])
     .addCell(1, 0, ['brown'])
+    .withPlacementCell(0, 0)  // Animal placed on central water
+    .withMaxUsage(2)
     .withDescription('Architecte des cours d\'eau')
     .build()
 };

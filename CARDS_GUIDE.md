@@ -19,6 +19,7 @@ const wolf = createAnimalCard('wolf', 'Loup')
   .addCell(0, 0, ['water'])           // Center: water token
   .addCell(0, 1, ['water'])           // Above center: water token  
   .addCell(1, 0, ['mountain', 'mountain']) // Right: 2 stacked mountain tokens
+  .withPlacementCell(1, 0)            // 🐾 Animal placed on the stacked mountains
   .withDescription('Un prédateur solitaire qui aime les rivières et montagnes')
   .build();
 ```
@@ -44,10 +45,10 @@ const fox = {
   animalName: 'Renard',
   description: 'Rusé habitant des villages et forêts',
   pattern: createCardPattern([
-    { q: 0, r: 0, tokenTypes: ['house'] },
+    { q: 0, r: 0, tokenTypes: ['house'] },      // Animal placed here
     { q: 1, r: -1, tokenTypes: ['brown', 'tree'] },
     { q: -1, r: 1, tokenTypes: ['field'] }
-  ])
+  ], { q: 0, r: 0 })  // 🐾 Specify placement cell coordinates
 };
 ```
 
@@ -123,6 +124,20 @@ createAnimalCard('wolf', 'Loup')
   .addCell(-1, 0, ['mountain'])
 ```
 
+## 🐾 Animal Placement System
+
+### Visual Indicators:
+- **🟡 Highlighted cell** - Light yellow/beige background for placement cell
+- **🧡 Orange border** - Thicker orange border around placement cell  
+- **🐾 Paw print icon** - Shows above the placement cell
+- **Token display** - Shows `🐾 → 🌻 field` below card name
+
+### How it works:
+1. Each card specifies exactly which cell the animal will be placed on
+2. The system identifies what token type is at that position  
+3. Visual feedback shows players where animals go
+4. Easy to change placement by updating coordinates
+
 ## 🎨 Visual Customization
 
 The cards automatically:
@@ -130,6 +145,8 @@ The cards automatically:
 - ✅ Show token stacking with visual offsets  
 - ✅ Display stack counts for multiple tokens
 - ✅ Use consistent colors for each token type
+- ✅ **Highlight animal placement cells** 🐾
+- ✅ **Show placement token type** with emojis
 - ✅ Scale to fit the card size
 - ✅ Show animal name and description
 
