@@ -5,6 +5,7 @@ import { GiCorn } from 'react-icons/gi';
 import { canPlaceToken, type Token, type TokenType } from '../utils/can-be-placed';
 import {calculatePoints, type GridCell, type HexCoord, type PixelCoord} from "../utils/points-calculation.ts";
 import CardsDeck from "./cards-deck/CardsDeck.tsx";
+import { type Card } from "../types/Card.ts";
 
 const HEX_SIZE = 50;
 const CANVAS_WIDTH = 1200;
@@ -65,6 +66,68 @@ const roundHex = (q: number, r: number): HexCoord => {
   return { q: rq, r: rr };
 };
 
+// Animal pattern placement functions
+const canPlaceAnimalPattern = (card: Card, grid: Map<string, GridCell>, anchorCoord: HexCoord): boolean => {
+  // Check if all pattern cells can be placed at the anchor position
+  for (const patternCell of card.pattern.cells) {
+    // Calculate world position relative to anchor
+    const worldQ = anchorCoord.q + patternCell.coord.q;
+    const worldR = anchorCoord.r + patternCell.coord.r;
+    const worldKey = `${worldQ},${worldR}`;
+
+    const gridCell = grid.get(worldKey);
+    if (!gridCell) return false; // Cell doesn't exist on grid
+
+    // Check if required tokens match what's on the board
+    const requiredTokens = patternCell.tokens;
+    const existingTokens = gridCell.tokens;
+
+    if (requiredTokens.length !== existingTokens.length) return false;
+
+    for (let i = 0; i < requiredTokens.length; i++) {
+      if (requiredTokens[i].type !== existingTokens[i].type) return false;
+    }
+  }
+
+  return true;
+};
+
+const placeAnimalOnBoard = (card: Card, grid: Map<string, GridCell>, anchorCoord: HexCoord): Map<string, GridCell> => {
+  const newGrid = new Map(grid);
+
+  // Find the placement cell (where the animal goes)
+  const placementPattern = card.pattern.cells.find(
+    cell => cell.coord.q === card.pattern.placementCell.q &&
+            cell.coord.r === card.pattern.placementCell.r
+  );
+
+  if (!placementPattern) return newGrid;
+
+  // Calculate world position for animal placement
+  const animalWorldQ = anchorCoord.q + card.pattern.placementCell.q;
+  const animalWorldR = anchorCoord.r + card.pattern.placementCell.r;
+  const animalKey = `${animalWorldQ},${animalWorldR}`;
+
+  const targetCell = newGrid.get(animalKey);
+  if (!targetCell) return newGrid;
+
+  // Create animal token
+  const animalToken: Token = {
+    id: `animal-${card.id}-${Date.now()}`,
+    type: 'animal' as any, // We'll need to extend TokenType
+    color: '#8B4513' // Brown for animals
+  };
+
+  // Add animal to the top of the token stack
+  const updatedCell = {
+    ...targetCell,
+    tokens: [...targetCell.tokens, animalToken]
+  };
+
+  newGrid.set(animalKey, updatedCell);
+  return newGrid;
+};
+
 
 const drawHexagon = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
   ctx.beginPath();
@@ -95,6 +158,7 @@ const PlayingBoard = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [grid, setGrid] = useState<Map<string, GridCell>>(new Map());
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const [selectedAnimalCard, setSelectedAnimalCard] = useState<Card | null>(null);
   const [hoveredCell, setHoveredCell] = useState<string | null>(null);
   const [totalPoints, setTotalPoints] = useState<number>();
 
@@ -180,8 +244,14 @@ const PlayingBoard = () => {
         } else if (selectedToken) {
           strokeColor = '#00FF00'; // Vert pour valid
           lineWidth = 3;
+        } else if (selectedAnimalCard && !canPlaceAnimalPattern(selectedAnimalCard, grid, cell.coord)) {
+          strokeColor = '#FF0000'; // Rouge pour pattern invalid
+          lineWidth = 3;
+        } else if (selectedAnimalCard) {
+          strokeColor = '#00FF00'; // Vert pour pattern valid
+          lineWidth = 3;
         } else {
-          strokeColor = '#FF6B6B'; // Rose pour hover sans token
+          strokeColor = '#FF6B6B'; // Rose pour hover sans selection
           lineWidth = 3;
         }
       }
@@ -199,8 +269,19 @@ const PlayingBoard = () => {
           const radius = HEX_SIZE * 0.6 - (index * 2);
 
           ctx.beginPath();
-          ctx.arc(pixel.x + offsetX, pixel.y + offsetY, Math.max(radius, 15), 0, Math.PI * 2);
-          ctx.fillStyle = token.color;
+
+          if (token.type !== 'animal') {
+            ctx.arc(pixel.x + offsetX, pixel.y + offsetY, Math.max(radius, 15), 0, Math.PI * 2);
+            ctx.fillStyle = token.color;
+          } else {
+            ctx.rect(
+                pixel.x + offsetX + 15 - Math.max(radius, 15),
+                pixel.y + offsetY + 15 - Math.max(radius, 15),
+                Math.max(radius, 15),
+                Math.max(radius, 15)
+            );
+            ctx.fillStyle = '#D3D3D3';
+          }
           ctx.fill();
           ctx.strokeStyle = '#333';
           ctx.lineWidth = 2;
@@ -232,7 +313,8 @@ const PlayingBoard = () => {
       ctx.textAlign = 'center';
       ctx.fillText(`${cell.coord.q},${cell.coord.r}`, pixel.x, pixel.y + HEX_SIZE + 15);
     });
-  }, [grid, hoveredCell, selectedToken]);
+
+  }, [grid, hoveredCell, selectedToken, selectedAnimalCard]);
 
   // Effet de rendu
   useEffect(() => {
@@ -248,7 +330,7 @@ const PlayingBoard = () => {
   // Gestion des clics
   const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas || !selectedToken) return;
+    if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -258,7 +340,8 @@ const PlayingBoard = () => {
     const key = `${hexCoord.q},${hexCoord.r}`;
     const cell = grid.get(key);
 
-    if (cell && canPlaceToken(selectedToken, cell.tokens)) {
+    // Handle token placement
+    if (selectedToken && cell && canPlaceToken(selectedToken, cell.tokens)) {
       setGrid(prev => {
         const newGrid = new Map(prev);
         const updatedCell = { ...cell, tokens: [...cell.tokens, selectedToken] };
@@ -266,8 +349,16 @@ const PlayingBoard = () => {
         return newGrid;
       });
       setSelectedToken(null);
+      return;
     }
-  }, [selectedToken, grid]);
+
+    // Handle animal card placement
+    if (selectedAnimalCard && cell && canPlaceAnimalPattern(selectedAnimalCard, grid, hexCoord)) {
+      setGrid(prev => placeAnimalOnBoard(selectedAnimalCard, prev, hexCoord));
+      setSelectedAnimalCard(null);
+      return;
+    }
+  }, [selectedToken, selectedAnimalCard, grid]);
 
 // Gestion du survol
   const handleCanvasMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -294,7 +385,8 @@ const PlayingBoard = () => {
     'house': <LuHouse className="w-[1.5rem] h-[1.5rem]" />,
     'water': <BiWater className="w-[1.5rem] h-[1.5rem]" />,
     field: <GiCorn className="w-[1.5rem] h-[1.5rem]" />,
-    brown: <LuEarth className="w-[1.5rem] h-[1.5rem]" />
+    brown: <LuEarth className="w-[1.5rem] h-[1.5rem]" />,
+    animal: <span className="text-lg">🐾</span>
   }
   return (
       <div className="flex flex-col items-center justify-center">
@@ -303,7 +395,10 @@ const PlayingBoard = () => {
           {AVAILABLE_TOKENS.map(token => (
               <button
                   key={token.id}
-                  onClick={() => setSelectedToken(selectedToken?.id === token.id ? null : token)}
+                  onClick={() => {
+                    setSelectedToken(selectedToken?.id === token.id ? null : token);
+                    setSelectedAnimalCard(null); // Clear animal card selection when token is selected
+                  }}
                   className={`w-16 h-16 rounded-full border-2 flex items-center justify-center text-white font-bold ${
                       selectedToken?.id === token.id
                           ? 'border-red-500 ring-2 ring-red-300'
@@ -318,6 +413,14 @@ const PlayingBoard = () => {
         {selectedToken && (
             <p className="mb-4 text-gray-600">
               Token sélectionné: <span className="font-semibold">{selectedToken.type}</span>
+            </p>
+        )}
+
+        {selectedAnimalCard && (
+            <p className="mb-4 text-blue-600">
+              Animal sélectionné: <span className="font-semibold">{selectedAnimalCard.animalName}</span>
+              <br />
+              <span className="text-sm">Cliquez sur la grille pour placer selon le motif</span>
             </p>
         )}
 
@@ -348,7 +451,12 @@ const PlayingBoard = () => {
           <p className="mt-2">Bordure verte = placement valide, rouge = invalide</p>
         </div>
 
-        <CardsDeck />
+        <CardsDeck
+          onCardClick={(card) => {
+            setSelectedAnimalCard(card);
+            setSelectedToken(null); // Clear token selection when animal card is selected
+          }}
+        />
       </div>
   )
 }
