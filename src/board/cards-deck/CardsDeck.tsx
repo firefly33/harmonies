@@ -50,11 +50,20 @@ const cards: CardType[] = [
     .build()
 ];
 
-const CardsDeck = () => {
+interface CardsDeckProps {
+  onCardClick?: (card: CardType) => void;
+}
+
+const CardsDeck = ({ onCardClick }: CardsDeckProps) => {
   const [cardStates, setCardStates] = useState<Map<string, number>>(new Map());
 
   const handleCardClick = (card: CardType) => {
     console.log('Card clicked:', card.animalName);
+    
+    // Call the external handler first (for board integration)
+    if (onCardClick) {
+      onCardClick(card);
+    }
     
     // Toggle usage state for demonstration
     setCardStates(prev => {
