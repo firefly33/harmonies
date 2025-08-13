@@ -33,7 +33,7 @@ export const canPlaceToken = (newToken: Token, existingTokens: Token[]): boolean
       return existingTokens.length === 0;
 
     case 'house':
-      return ['brown', 'mountain', 'house'].includes(topToken.type) && existingTokens.length < 3;
+      return ['brown', 'mountain', 'house'].includes(topToken.type) && existingTokens.length < 2;
 
     case 'brown':
       return !['mountain', 'house', 'water', 'field', 'tree'].includes(topToken.type) && existingTokens.length < 3;

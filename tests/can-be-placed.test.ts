@@ -119,31 +119,32 @@ describe('canPlaceToken', () => {
       expect(canPlaceToken(house, [])).toBe(true);
     });
 
+    it('should not allow house at third level', () => {
+      const house = createToken('house');
+      const twoMountains = [createToken('mountain'), createToken('mountain')];
+
+      expect(canPlaceToken(house, twoMountains)).toBe(false);
+    });
+
     it('should allow house on brown tokens', () => {
       const house = createToken('house');
       const oneBrown = [createToken('brown')];
-      const twoBrown = [createToken('brown'), createToken('brown')];
 
       expect(canPlaceToken(house, oneBrown)).toBe(true);
-      expect(canPlaceToken(house, twoBrown)).toBe(true);
     });
 
     it('should allow house on mountain tokens', () => {
       const house = createToken('house');
       const oneMountain = [createToken('mountain')];
-      const twoMountains = [createToken('mountain'), createToken('mountain')];
 
       expect(canPlaceToken(house, oneMountain)).toBe(true);
-      expect(canPlaceToken(house, twoMountains)).toBe(true);
     });
 
     it('should allow house on other houses', () => {
       const house = createToken('house');
       const oneHouse = [createToken('house')];
-      const twoHouses = [createToken('house'), createToken('house')];
 
       expect(canPlaceToken(house, oneHouse)).toBe(true);
-      expect(canPlaceToken(house, twoHouses)).toBe(true);
     });
 
     it('should not allow house on invalid base tokens', () => {
@@ -196,20 +197,28 @@ describe('canPlaceToken', () => {
       const brownTreeStack = [createToken('brown'), createToken('tree')];
       expect(canPlaceToken(createToken('house'), brownTreeStack)).toBe(false);
 
-      // Valid: Mountain -> Mountain -> House
+      // Invalid: Mountain -> Mountain -> House
       const mountainMountainStack = [createToken('mountain'), createToken('mountain')];
-      expect(canPlaceToken(createToken('house'), mountainMountainStack)).toBe(true);
+      expect(canPlaceToken(createToken('house'), mountainMountainStack)).toBe(false);
+
+      // Invalid: Brown -> House -> House
+      const brownHouseStack = [createToken('brown'), createToken('house')];
+      expect(canPlaceToken(createToken('house'), brownHouseStack)).toBe(false);
+
+      // Valid: Mountain -> Mountain -> House
+      const mountainStack = [createToken('mountain')];
+      expect(canPlaceToken(createToken('house'), mountainStack)).toBe(true);
 
       // Valid: Brown -> House -> House
-      const brownHouseStack = [createToken('brown'), createToken('house')];
-      expect(canPlaceToken(createToken('house'), brownHouseStack)).toBe(true);
+      const houseStack = [createToken('house')];
+      expect(canPlaceToken(createToken('house'), houseStack)).toBe(true);
     });
 
     it.each([
       { token: createToken('tree'), stack: [createToken('brown'), createToken('brown')], canTokenBePlaced: true },
       { token: createToken('house'), stack: [createToken('brown'), createToken('tree')], canTokenBePlaced: false },
-      { token: createToken('house'), stack: [createToken('mountain'), createToken('mountain')], canTokenBePlaced: true },
-      { token: createToken('house'), stack: [createToken('brown'), createToken('house')], canTokenBePlaced: true },
+      { token: createToken('house'), stack: [createToken('mountain')], canTokenBePlaced: true },
+      { token: createToken('house'), stack: [createToken('brown')], canTokenBePlaced: true },
     ])('can place token $token.type', ({ token, stack, canTokenBePlaced }) => {
       expect(canPlaceToken(token, stack)).toBe(canTokenBePlaced);
     })
