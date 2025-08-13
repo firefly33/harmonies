@@ -4,7 +4,7 @@ import {LuEarth, LuHouse, LuMountain, LuTrees} from "react-icons/lu";
 import { GiCorn } from 'react-icons/gi';
 import { canPlaceToken, type Token, type TokenType } from '../utils/can-be-placed';
 import {calculatePoints, type GridCell, type HexCoord, type PixelCoord} from "../utils/points-calculation.ts";
-import {createGridBuilder} from "../utils/GridBuilder.ts";
+import CardsDeck from "./cards-deck/CardsDeck.tsx";
 
 const HEX_SIZE = 50;
 const CANVAS_WIDTH = 1200;
@@ -83,11 +83,11 @@ const drawHexagon = (ctx: CanvasRenderingContext2D, x: number, y: number, size: 
 
 // Tokens inspirés d'Harmonies (couleurs du vrai jeu)
 const AVAILABLE_TOKENS: Token[] = [
-  { id: '1', type: 'tree', color: '#228B22' },     // Vert - Arbres
-  { id: '2', type: 'house', color: '#CD853F' },    // Rouge/Orange - Bâtiments
-  { id: '3', type: 'water', color: '#4682B4' },    // Bleu - Eau
-  { id: '4', type: 'mountain', color: '#708090' }, // Gris - Montagnes
-  { id: '5', type: 'field', color: '#DAA520' },    // Jaune - Champs
+  { id: '1', type: 'tree', color: '#50C878' },     // Vert - Arbres
+  { id: '2', type: 'house', color: '#E74C3C' },    // Rouge/Orange - Bâtiments
+  { id: '3', type: 'water', color: '#4A90E2' },    // Bleu - Eau
+  { id: '4', type: 'mountain', color: '#8E8E93' }, // Gris - Montagnes
+  { id: '5', type: 'field', color: '#F4D03F' },    // Jaune - Champs
   { id: '6', type: 'brown', color: '#8B4513' }     // Marron - Base pour arbres
 ];
 
@@ -126,7 +126,7 @@ const PlayingBoard = () => {
     .placeHouse(1, -1)
       .build();*/
 
-    GRID_LAYOUT.forEach((coord, __index) => {
+    GRID_LAYOUT.forEach((coord) => {
       const key = `${coord.q},${coord.r}`;
       const pixel = hexToPixel(coord.q, coord.r);
       //const terrains = ['forest', 'plain', 'water', 'mountain'] as const;
@@ -347,6 +347,8 @@ const PlayingBoard = () => {
           </div>
           <p className="mt-2">Bordure verte = placement valide, rouge = invalide</p>
         </div>
+
+        <CardsDeck />
       </div>
   )
 }
