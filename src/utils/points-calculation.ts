@@ -18,14 +18,6 @@ export interface GridCell {
   terrain: 'plain';
 }
 
-const HEX_DIRECTIONS: [number, number][] = [
-  [1, 0],   // Est (droite)
-  [1, -1],  // Nord-Est
-  [0, -1],  // Nord-Ouest
-  [-1, 0],  // Ouest (gauche)
-  [-1, 1],  // Sud-Ouest
-  [0, 1]    // Sud-Est
-];
 
 export const calculatePoints = (grid: Map<string, GridCell>): number => {
   return calculateWaterPath(grid) + calculateMountainPaths(grid) + calculateFieldPaths(grid) + calculateForestPaths(grid) + calculateHousePaths(grid);
