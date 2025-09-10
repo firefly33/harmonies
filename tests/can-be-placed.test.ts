@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { canPlaceToken, Token } from '../src/utils/can-be-placed';
+import {canPlaceAnimal, canPlaceAnimalAtPosition, canPlaceToken, Token} from '../src/utils/can-be-placed';
+import {createGridBuilder} from "../src/utils/GridBuilder";
+import {createAnimalCard} from "../src/utils/CardPatternBuilder";
+import { Card } from '../src/types/Card';
+import { GridCell } from '../src/utils/points-calculation';
 
 const createToken = (type: Token['type'], id = '1'): Token => ({
   id,
@@ -11,7 +15,7 @@ describe('canPlaceToken', () => {
   describe('General rules', () => {
     it('should allow any token on empty ground', () => {
       const tokens: Token[] = ['tree', 'house', 'water', 'mountain', 'field', 'brown']
-        .map(type => createToken(type as Token['type']));
+      .map(type => createToken(type as Token['type']));
 
       tokens.forEach(token => {
         expect(canPlaceToken(token, [])).toBe(true);
@@ -215,12 +219,240 @@ describe('canPlaceToken', () => {
     });
 
     it.each([
-      { token: createToken('tree'), stack: [createToken('brown'), createToken('brown')], canTokenBePlaced: true },
-      { token: createToken('house'), stack: [createToken('brown'), createToken('tree')], canTokenBePlaced: false },
-      { token: createToken('house'), stack: [createToken('mountain')], canTokenBePlaced: true },
-      { token: createToken('house'), stack: [createToken('brown')], canTokenBePlaced: true },
-    ])('can place token $token.type', ({ token, stack, canTokenBePlaced }) => {
+      {token: createToken('tree'), stack: [createToken('brown'), createToken('brown')], canTokenBePlaced: true},
+      {token: createToken('house'), stack: [createToken('brown'), createToken('tree')], canTokenBePlaced: false},
+      {token: createToken('house'), stack: [createToken('mountain')], canTokenBePlaced: true},
+      {token: createToken('house'), stack: [createToken('brown')], canTokenBePlaced: true},
+    ])('can place token $token.type', ({token, stack, canTokenBePlaced}) => {
       expect(canPlaceToken(token, stack)).toBe(canTokenBePlaced);
     })
   });
+
+  describe("Animal placing rules", () => {
+    describe("for the Racoon", () => {
+      const RACOON_CARD = createAnimalCard('1', 'Raton-laveur')
+      .addCell(0, 0, ['field'])     // This is where the animal will be placed
+      .addCell(0, 1, ['water'])
+      .addCell(1, 0, ['water'])
+      .addCell(-1, 1, ['water'])
+      .withPlacementCell(0, 0)      // Animal placed on the field token
+      .withMaxUsage(2)              // Can be used 2 times
+      .withDescription('Un voleur de poubelles')
+      .build();
+
+      it("should allow placing for same position", () => {
+        const grid = createGridBuilder()
+        .placeField(0, 0)
+        .placeWater(0, 1)
+        .placeWater(-1, 1)
+        .placeWater(1, 0)
+        .build();
+
+        expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(true);
+      });
+
+      it("should allow placing in different directions", () => {
+        const grid = createGridBuilder()
+        .placeField(0, 0)
+        .placeWater(-1, 0)
+        .placeWater(-1, 1)
+        .placeWater(0, -1)
+        .build();
+
+        expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(true);
+      });
+
+      describe("should allow all 6 rotational orientations", () => {
+        // Original pattern: field at (0,0), water at (0,1), (1,0), (-1,1)
+        
+        it("0° rotation (original)", () => {
+          const grid = createGridBuilder()
+          .placeField(0, 0)
+          .placeWater(0, 1)    // above
+          .placeWater(1, 0)    // right
+          .placeWater(-1, 1)   // upper-left
+          .build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(true);
+        });
+
+        it("60° rotation", () => {
+          const grid = createGridBuilder()
+          .placeField(0, 0)
+          .placeWater(-1, 0)   // left  
+          .placeWater(-1, 1)   // upper-left
+          .placeWater(0, -1)   // lower-right
+          .build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(true);
+        });
+
+        it("120° rotation", () => {
+          const grid = createGridBuilder()
+          .placeField(0, 0)
+          .placeWater(1, -1)   // (0,1) rotated 120° → (1,-1)
+          .placeWater(0, -1)   // (1,0) rotated 120° → (0,-1)  
+          .placeWater(1, 0)    // (-1,1) rotated 120° → (1,0)
+          .build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(true);
+        });
+
+        it("180° rotation", () => {
+          const grid = createGridBuilder()
+          .placeField(0, 0)
+          .placeWater(0, -1)   // below
+          .placeWater(-1, 0)   // left
+          .placeWater(1, -1)   // lower-right
+          .build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(true);
+        });
+
+        it("240° rotation", () => {
+          const grid = createGridBuilder()
+          .placeField(0, 0)
+          .placeWater(1, 0)    // right
+          .placeWater(1, -1)   // lower-right
+          .placeWater(0, 1)    // upper-left
+          .build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(true);
+        });
+
+        it("300° rotation", () => {
+          const grid = createGridBuilder()
+          .placeField(0, 0)
+          .placeWater(-1, 1)   // (0,1) rotated 300° → (-1,1)
+          .placeWater(0, 1)    // (1,0) rotated 300° → (0,1)
+          .placeWater(-1, 0)   // (-1,1) rotated 300° → (-1,0)
+          .build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(true);
+        });
+      });
+
+      describe("should reject invalid placements", () => {
+        it("should reject when placement cell has wrong token type", () => {
+          const grid = createGridBuilder()
+          .placeWater(0, 0)    // water instead of field!
+          .placeWater(0, 1)
+          .placeWater(1, 0)
+          .placeWater(-1, 1)
+          .build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(false);
+        });
+
+        it("should reject when missing water tokens", () => {
+          const grid = createGridBuilder()
+          .placeField(0, 0)
+          .placeWater(0, 1)
+          .placeWater(1, 0)
+          // Missing water at (-1, 1)
+          .build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(false);
+        });
+
+        it("should accept when extra tokens present elsewhere", () => {
+          // The function currently only checks if the pattern can be matched
+          // Extra tokens elsewhere on the grid should be allowed
+          const grid = createGridBuilder()
+          .placeField(0, 0)
+          .placeWater(0, 1)
+          .placeWater(1, 0)
+          .placeWater(-1, 1)
+          .placeTree(1, 1)     // Extra token not in pattern - should be fine
+          .build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(true);
+        });
+
+        it("should reject when wrong token types in pattern positions", () => {
+          const grid = createGridBuilder()
+          .placeField(0, 0)
+          .placeField(0, 1)    // field instead of water
+          .placeWater(1, 0)
+          .placeWater(-1, 1)
+          .build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(false);
+        });
+
+        it("should reject when grid cells don't exist", () => {
+          // Empty grid - no cells at required positions
+          const grid = createGridBuilder().build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(false);
+        });
+
+        it("should reject when token stacks have wrong height", () => {
+          const grid = createGridBuilder()
+          .placeField(0, 0)
+          .placeBrown(0, 1)
+          .placeWater(0, 1)    // 2 tokens instead of 1
+          .placeWater(1, 0)
+          .placeWater(-1, 1)
+          .build();
+          
+          expect(canPlaceAnimal(RACOON_CARD, grid)).toBe(false);
+        });
+      });
+
+      describe("canPlaceAnimalAtPosition for UI interaction", () => {
+        it("should allow placing at different positions on the grid", () => {
+          // Test placing racoon at position (0,0) with correct relative pattern  
+          // Pattern: field at (0,0), water at (0,1), (1,0), (-1,1)
+          const grid = createGridBuilder()
+          .placeField(0, 0)     // Placement cell at clicked position
+          .placeWater(0, 1)     // Pattern (0,1) relative to (0,0) = (0,1)
+          .placeWater(1, 0)     // Pattern (1,0) relative to (0,0) = (1,0)
+          .placeWater(-1, 1)    // Pattern (-1,1) relative to (0,0) = (-1,1)
+          .build();
+
+          expect(canPlaceAnimalAtPosition(RACOON_CARD, grid, { q: 0, r: 0 })).toBe(true);
+        });
+
+        it("should allow placing at negative coordinates", () => {
+          // Test placing racoon at position (-1,-1) with correct relative pattern
+          const grid = createGridBuilder()
+          .placeField(-1, -1)   // Placement cell at clicked position
+          .placeWater(-1, 0)    // Pattern (0,1) relative to (-1,-1) = (-1,0)
+          .placeWater(0, -1)    // Pattern (1,0) relative to (-1,-1) = (0,-1)
+          .placeWater(-2, 0)    // Pattern (-1,1) relative to (-1,-1) = (-2,0)
+          .build();
+
+          expect(canPlaceAnimalAtPosition(RACOON_CARD, grid, { q: -1, r: -1 })).toBe(true);
+        });
+
+        it("should reject placement when pattern doesn't match at position", () => {
+          // Test placing racoon at position (0,0) but without correct tokens
+          const grid = createGridBuilder()
+          .placeWater(0, 0)     // Wrong token type at placement cell
+          .placeWater(0, 1)
+          .placeWater(1, 0)
+          .placeWater(-1, 1)
+          .build();
+
+          expect(canPlaceAnimalAtPosition(RACOON_CARD, grid, { q: 0, r: 0 })).toBe(false);
+        });
+
+        it("should work with rotated patterns", () => {
+          // Test with 60° rotated pattern
+          const grid = createGridBuilder()
+          .placeField(0, 0)     // Placement cell
+          .placeWater(-1, 0)    // 60° rotation positions
+          .placeWater(-1, 1)
+          .placeWater(0, -1)
+          .build();
+
+          expect(canPlaceAnimalAtPosition(RACOON_CARD, grid, { q: 0, r: 0 })).toBe(true);
+        });
+      });
+
+    });
+  })
 });
+
+
