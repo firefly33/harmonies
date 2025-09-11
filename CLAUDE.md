@@ -28,6 +28,13 @@
 - Use mutations for data updates
 - Take advantage of loading/error states provided by the library
 
+### Service Layer Pattern
+- Create dedicated service files for data fetching operations
+- Place service files in a `services` directory
+- Keep data fetching logic separate from hooks and components
+- Use descriptive service names (e.g., `CardService.ts`, `UserService.ts`)
+- Export functions that return Promises for async operations
+
 ### Test-First Approach
 - Write tests before implementing components and hooks
 - Start with failing tests that define the expected behavior
