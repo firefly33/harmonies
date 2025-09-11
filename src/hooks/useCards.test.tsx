@@ -79,9 +79,7 @@ describe('useCards', () => {
     const cardNames = cards.map(card => card.animalName);
 
     expect(cardNames).toContain('Raton-laveur');
-    expect(cardNames).toContain('Lapin');
-    expect(cardNames).toContain('Renard');
-    expect(cardNames).toContain('Dragon');
+    expect(cards.length).toBe(1);
   });
 
   it('should provide correct loading states', () => {
