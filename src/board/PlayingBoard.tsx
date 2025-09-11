@@ -4,7 +4,7 @@ import {LuEarth, LuHouse, LuMountain, LuTrees} from "react-icons/lu";
 import { GiCorn } from 'react-icons/gi';
 import { canPlaceToken, canPlaceAnimalAtPosition, type Token, type TokenType } from '../utils/can-be-placed';
 import {calculatePoints, type GridCell, type HexCoord, type PixelCoord} from "../utils/points-calculation.ts";
-import CardsDeck from "./cards-deck/CardsDeck.tsx";
+import CardsDeck, { type CardsDeckRef } from "./cards-deck/CardsDeck.tsx";
 import Sidebar from "../components/Sidebar.tsx";
 import { type Card } from "../types/Card.ts";
 
@@ -123,6 +123,7 @@ const AVAILABLE_TOKENS: Token[] = [
 
 const PlayingBoard = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cardsDeckRef = useRef<CardsDeckRef>(null);
   const [grid, setGrid] = useState<Map<string, GridCell>>(new Map());
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [selectedAnimalCard, setSelectedAnimalCard] = useState<Card | null>(null);
@@ -322,6 +323,12 @@ const PlayingBoard = () => {
     // Handle animal card placement
     if (selectedAnimalCard && cell && canPlaceAnimalAtPosition(selectedAnimalCard, grid, hexCoord)) {
       setGrid(prev => placeAnimalOnBoard(selectedAnimalCard, prev, hexCoord));
+      
+      // Decrement card usage on successful placement
+      if (cardsDeckRef.current) {
+        cardsDeckRef.current.cardPlaced(selectedAnimalCard.id);
+      }
+      
       setSelectedAnimalCard(null);
       return;
     }
@@ -424,6 +431,7 @@ const PlayingBoard = () => {
       {/* Sidebar with Cards */}
       <Sidebar>
         <CardsDeck
+          ref={cardsDeckRef}
           onCardClick={(card) => {
             setSelectedAnimalCard(card);
             setSelectedToken(null); // Clear token selection when animal card is selected
