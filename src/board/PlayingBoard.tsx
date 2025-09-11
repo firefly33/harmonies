@@ -5,6 +5,7 @@ import { GiCorn } from 'react-icons/gi';
 import { canPlaceToken, canPlaceAnimalAtPosition, type Token, type TokenType } from '../utils/can-be-placed';
 import {calculatePoints, type GridCell, type HexCoord, type PixelCoord} from "../utils/points-calculation.ts";
 import CardsDeck from "./cards-deck/CardsDeck.tsx";
+import Sidebar from "../components/Sidebar.tsx";
 import { type Card } from "../types/Card.ts";
 
 const HEX_SIZE = 50;
@@ -355,7 +356,9 @@ const PlayingBoard = () => {
     animal: <span className="text-lg">🐾</span>
   }
   return (
-      <div className="flex flex-col items-center justify-center">
+    <div className="flex h-screen">
+      {/* Main content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-4">
         {/* Panel de tokens */}
         <div className="mb-4 flex gap-2">
           {AVAILABLE_TOKENS.map(token => (
@@ -416,14 +419,18 @@ const PlayingBoard = () => {
           </div>
           <p className="mt-2">Bordure verte = placement valide, rouge = invalide</p>
         </div>
+      </div>
 
+      {/* Sidebar with Cards */}
+      <Sidebar>
         <CardsDeck
           onCardClick={(card) => {
             setSelectedAnimalCard(card);
             setSelectedToken(null); // Clear token selection when animal card is selected
           }}
         />
-      </div>
+      </Sidebar>
+    </div>
   )
 }
 export default PlayingBoard
