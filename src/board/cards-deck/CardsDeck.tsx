@@ -31,7 +31,10 @@ const CardsDeck = ({ onCardClick }: CardsDeckProps) => {
 
   if (isLoading) {
     return (
-      <section className="w-full">
+      <section className="mt-8 p-4">
+        <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">
+          Les cartes disponibles
+        </h2>
         <div className="flex justify-center">
           <div className="text-lg">Chargement des cartes...</div>
         </div>
@@ -41,7 +44,10 @@ const CardsDeck = ({ onCardClick }: CardsDeckProps) => {
 
   if (isError) {
     return (
-      <section className="w-full">
+      <section className="mt-8 p-4">
+        <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">
+          Les cartes disponibles
+        </h2>
         <div className="flex justify-center">
           <div className="text-lg text-red-600">
             Erreur lors du chargement des cartes: {error?.message || 'Erreur inconnue'}
@@ -53,7 +59,10 @@ const CardsDeck = ({ onCardClick }: CardsDeckProps) => {
 
   if (!cards || cards.length === 0) {
     return (
-      <section className="w-full">
+      <section className="mt-8 p-4">
+        <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">
+          Les cartes disponibles
+        </h2>
         <div className="flex justify-center">
           <div className="text-lg">Aucune carte disponible</div>
         </div>
@@ -62,8 +71,11 @@ const CardsDeck = ({ onCardClick }: CardsDeckProps) => {
   }
 
   return (
-    <section className="w-full">
-      <div className="flex flex-col gap-4">
+    <section className="mt-8 p-4">
+      <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">
+        Les cartes disponibles
+      </h2>
+      <div className="flex gap-4 justify-center flex-wrap">
         {cards.map((card) => {
           const cardWithUsage = {
             ...card,
@@ -75,7 +87,7 @@ const CardsDeck = ({ onCardClick }: CardsDeckProps) => {
               key={card.id}
               card={cardWithUsage}
               onClick={handleCardClick}
-              className="hover:scale-105 transition-transform w-full"
+              className="hover:scale-105 transition-transform"
             />
           );
         })}
