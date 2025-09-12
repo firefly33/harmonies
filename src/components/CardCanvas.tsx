@@ -8,7 +8,7 @@ interface CardCanvasProps {
   hexSize?: number;
 }
 
-const CardCanvas = ({ pattern, width = 220, height = 180, hexSize = 18 }: CardCanvasProps) => {
+const CardCanvas = ({ pattern, width = 180, height = 120, hexSize = 12 }: CardCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const hexToPixel = useCallback((q: number, r: number, centerX: number, centerY: number) => {
@@ -142,10 +142,10 @@ const CardCanvas = ({ pattern, width = 220, height = 180, hexSize = 18 }: CardCa
       ref={canvasRef}
       width={width}
       height={height}
-      className="border-b border-gray-300"
+      className="border-b border-gray-300 max-w-full"
       style={{
         imageRendering: 'crisp-edges',
-        maxWidth: '100%',
+        width: '100%',
         height: 'auto'
       }}
     />
