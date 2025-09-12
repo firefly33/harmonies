@@ -13,6 +13,7 @@ export const getCards = async (): Promise<CardType[]> => {
           .addCell(-1, 1, ['water'])
           .withPlacementCell(0, 0)      // Animal placed on the field token
           .withMaxUsage(2)              // Can be used 2 times
+          .withPointsPerUsage([3, 8])   // 3 points for first usage, 8 points for second usage
           .withDescription('Un voleur de poubelles')
           .build()
       ];
