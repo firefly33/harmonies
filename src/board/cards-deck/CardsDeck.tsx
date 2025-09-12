@@ -1,56 +1,33 @@
-import { useState, forwardRef, useImperativeHandle } from 'react';
+import { useState } from 'react';
 import { type Card as CardType } from '../../types/Card';
 import { useCards } from '../../hooks/useCards';
 import Card from '../../components/Card';
 
 interface CardsDeckProps {
   onCardClick?: (card: CardType) => void;
-  onCardPlaced?: (cardId: string) => void;
 }
 
-export interface CardsDeckRef {
-  cardPlaced: (cardId: string) => void;
-}
-
-const CardsDeck = forwardRef<CardsDeckRef, CardsDeckProps>(({ onCardClick, onCardPlaced }, ref) => {
+const CardsDeck = ({ onCardClick }: CardsDeckProps) => {
   const { cards, isLoading, error, isError } = useCards();
   const [cardStates, setCardStates] = useState<Map<string, number>>(new Map());
 
   const handleCardClick = (card: CardType) => {
-    const currentUsage = cardStates.get(card.id) || 0;
-    
-    // Don't allow selection if card is fully used
-    if (currentUsage >= card.maxUsage) {
-      return;
-    }
-
     console.log('Card clicked:', card.animalName);
     
-    // Call the external handler for board integration
+    // Call the external handler first (for board integration)
     if (onCardClick) {
       onCardClick(card);
     }
-  };
-
-  // Function to be called when an animal is successfully placed
-  const handleCardPlaced = (cardId: string) => {
+    
+    // Toggle usage state for demonstration
     setCardStates(prev => {
       const newStates = new Map(prev);
-      const currentUsage = newStates.get(cardId) || 0;
-      const newUsage = Math.min(currentUsage + 1, cards?.find(c => c.id === cardId)?.maxUsage || 0);
-      newStates.set(cardId, newUsage);
+      const currentUsage = newStates.get(card.id) || 0;
+      const newUsage = currentUsage < card.maxUsage ? currentUsage + 1 : 0;
+      newStates.set(card.id, newUsage);
       return newStates;
     });
-    
-    if (onCardPlaced) {
-      onCardPlaced(cardId);
-    }
   };
-
-  // Expose methods to parent component
-  useImperativeHandle(ref, () => ({
-    cardPlaced: handleCardPlaced
-  }));
 
   if (isLoading) {
     return (
@@ -88,11 +65,9 @@ const CardsDeck = forwardRef<CardsDeckRef, CardsDeckProps>(({ onCardClick, onCar
     <section className="w-full">
       <div className="flex flex-col gap-4">
         {cards.map((card) => {
-          const currentUsage = cardStates.get(card.id) || 0;
-          const isDisabled = currentUsage >= card.maxUsage;
           const cardWithUsage = {
             ...card,
-            currentUsage
+            currentUsage: cardStates.get(card.id) || 0
           };
           
           return (
@@ -100,20 +75,13 @@ const CardsDeck = forwardRef<CardsDeckRef, CardsDeckProps>(({ onCardClick, onCar
               key={card.id}
               card={cardWithUsage}
               onClick={handleCardClick}
-              className={`transition-transform w-full ${
-                isDisabled 
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : 'hover:scale-105 cursor-pointer'
-              }`}
+              className="hover:scale-105 transition-transform w-full"
             />
           );
         })}
       </div>
     </section>
   );
-});
-
-CardsDeck.displayName = 'CardsDeck';
-
-export default CardsDeck;
+};
+export default CardsDeck
 
