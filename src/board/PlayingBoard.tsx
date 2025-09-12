@@ -3,10 +3,13 @@ import { BiWater } from 'react-icons/bi';
 import {LuEarth, LuHouse, LuMountain, LuTrees} from "react-icons/lu";
 import { GiCorn } from 'react-icons/gi';
 import { canPlaceToken, canPlaceAnimalAtPosition, type Token, type TokenType } from '../utils/can-be-placed';
-import {calculatePoints, type GridCell, type HexCoord, type PixelCoord} from "../utils/points-calculation.ts";
-import CardsDeck, { type CardsDeckRef } from "./cards-deck/CardsDeck.tsx";
+import {type GridCell, type HexCoord, type PixelCoord} from "../utils/points-calculation.ts";
+import CardsDeck from "./cards-deck/CardsDeck.tsx";
 import Sidebar from "../components/Sidebar.tsx";
 import { type Card } from "../types/Card.ts";
+import { useCards } from '../hooks/useCards';
+import {createGridBuilder} from "../utils/GridBuilder.ts";
+import {useCardStatesStore} from "../stores/cardStatesStore.ts";
 
 const HEX_SIZE = 50;
 const CANVAS_WIDTH = 1200;
@@ -123,40 +126,23 @@ const AVAILABLE_TOKENS: Token[] = [
 
 const PlayingBoard = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const cardsDeckRef = useRef<CardsDeckRef>(null);
+  const { cards, isLoading, error, isError } = useCards();
+  const { incrementCardUsage } = useCardStatesStore();
   const [grid, setGrid] = useState<Map<string, GridCell>>(new Map());
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [selectedAnimalCard, setSelectedAnimalCard] = useState<Card | null>(null);
   const [hoveredCell, setHoveredCell] = useState<string | null>(null);
-  const [totalPoints, setTotalPoints] = useState<number>();
-
   // Initialisation de la grille
   useEffect(() => {
     const initialGrid = new Map<string, GridCell>();
-    const exempleGrid = initialGrid;
-    /*createGridBuilder()
-    .placeMountain(0, 0)
-    .placeMountain(0, 0)
-    .placeMountain(0, 0)
-    .placeMountain(0, 1)
-    .placeMountain(-1, -1)
-    .placeMountain(-1, -1)
-    .placeMountain(2, 1)
-    .placeMountain(2, 1)
-    .placeMountain(-2, -1)
-    .placeMountain(0, 1)
-    .placeMountain(0, 2)
-    .placeWater(2, -3)
-    .placeWater(1, -2)
-    .placeWater(0, -1)
-    .placeWater(-1, 0)
-    .placeWater(-2, 0)
-    .placeField(2, -2)
-    .placeField(2, -1)
-    .placeBrown(-1, 2)
-    .placeTree(-1, 2)
-    .placeHouse(1, -1)
-      .build();*/
+    const exempleGrid =
+    createGridBuilder()
+.placeField(0, 0)     // Placement cell at clicked position
+          .placeWater(0, 1)     // Pattern (0,1) relative to (0,0) = (0,1)
+          .placeWater(1, 0)     // Pattern (1,0) relative to (0,0) = (1,0)
+          .placeWater(-1, 1)    // Pattern (-1,1) relative to (0,0) = (-1,1)
+          .build()
+
 
     GRID_LAYOUT.forEach((coord) => {
       const key = `${coord.q},${coord.r}`;
@@ -173,10 +159,6 @@ const PlayingBoard = () => {
 
     setGrid(initialGrid);
   }, []);
-
-  useEffect(() => {
-    setTotalPoints(calculatePoints(grid))
-  }, [grid]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
     // Effacer le canvas
@@ -323,12 +305,11 @@ const PlayingBoard = () => {
     // Handle animal card placement
     if (selectedAnimalCard && cell && canPlaceAnimalAtPosition(selectedAnimalCard, grid, hexCoord)) {
       setGrid(prev => placeAnimalOnBoard(selectedAnimalCard, prev, hexCoord));
-      
-      // Decrement card usage on successful placement
-      if (cardsDeckRef.current) {
-        cardsDeckRef.current.cardPlaced(selectedAnimalCard.id);
-      }
-      
+
+      // Track card usage without awarding points
+      incrementCardUsage(selectedAnimalCard.id, selectedAnimalCard.maxUsage);
+      console.log(`${selectedAnimalCard.animalName} placed - usage incremented`);
+
       setSelectedAnimalCard(null);
       return;
     }
@@ -400,8 +381,6 @@ const PlayingBoard = () => {
             </p>
         )}
 
-        <h2>Total points : {totalPoints}</h2>
-
         <canvas
             ref={canvasRef}
             width={CANVAS_WIDTH}
@@ -429,14 +408,30 @@ const PlayingBoard = () => {
       </div>
 
       {/* Sidebar with Cards */}
-      <Sidebar>
-        <CardsDeck
-          ref={cardsDeckRef}
-          onCardClick={(card) => {
-            setSelectedAnimalCard(card);
-            setSelectedToken(null); // Clear token selection when animal card is selected
-          }}
-        />
+      <Sidebar grid={grid} cards={cards}>
+        {isLoading && (
+          <div className="flex justify-center">
+            <div className="text-lg">Chargement des cartes...</div>
+          </div>
+        )}
+
+        {isError && (
+          <div className="flex justify-center">
+            <div className="text-lg text-red-600">
+              Erreur lors du chargement des cartes: {error?.message || 'Erreur inconnue'}
+            </div>
+          </div>
+        )}
+
+        {!isLoading && !isError && cards && (
+          <CardsDeck
+            cards={cards}
+            onCardClick={(card) => {
+              setSelectedAnimalCard(card);
+              setSelectedToken(null); // Clear token selection when animal card is selected
+            }}
+          />
+        )}
       </Sidebar>
     </div>
   )
