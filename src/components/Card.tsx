@@ -13,9 +13,9 @@ interface CardProps {
 
 const Card = ({
   card,
-  width = 240,
-  height = 320,
-  hexSize = 18,
+  width = 280,
+  height = 240,
+  hexSize = 14,
   onClick,
   className = ""
 }: CardProps) => {
@@ -25,8 +25,8 @@ const Card = ({
     }
   };
 
-  const canvasHeight = Math.floor(height * 0.6); // 60% for canvas
-  const infoHeight = height - canvasHeight; // 40% for info
+  const canvasHeight = Math.floor(height * 0.5); // 50% for canvas
+  const infoHeight = height - canvasHeight; // 50% for info
 
   // Get the placement token type and its color
   const placementTokenType = getPlacementTokenType(card);
@@ -46,9 +46,8 @@ const Card = ({
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-lg border-2 border-gray-300 overflow-hidden cursor-pointer hover:shadow-xl transition-shadow ${className}`}
+      className={`bg-white rounded-lg shadow-lg border-2 border-gray-300 overflow-hidden cursor-pointer hover:shadow-xl transition-shadow w-full ${className}`}
       style={{ 
-        width, 
         height,
         borderRightColor: borderColor,
         borderRightWidth: '6px'
@@ -57,7 +56,7 @@ const Card = ({
     >
       {/* Canvas area for pattern visualization */}
       <div
-        className="flex items-center justify-center bg-gray-50"
+        className="flex items-center justify-center bg-gray-50 w-full"
         style={{ height: canvasHeight }}
       >
         <CardCanvas
@@ -83,18 +82,22 @@ const Card = ({
           </p>
         )}
 
-        {/* Usage indicator squares */}
-        <div className="flex justify-center gap-1 mt-2">
+        {/* Usage indicator squares with points */}
+        <div className="flex justify-center gap-2 mt-2">
           {Array.from({ length: card.maxUsage }, (_, index) => (
-            <div
-              key={index}
-              className={`w-3 h-3 border border-gray-400 ${
-                index < (card.currentUsage || 0) 
-                  ? 'bg-gray-700' 
-                  : 'bg-white'
-              }`}
-              title={`Usage ${index + 1}/${card.maxUsage}`}
-            />
+            <div key={index} className="flex flex-col items-center">
+              <div
+                className={`w-3 h-3 border border-gray-400 ${
+                  index < (card.currentUsage || 0) 
+                    ? 'bg-gray-700' 
+                    : 'bg-white'
+                }`}
+                title={`Usage ${index + 1}/${card.maxUsage}: ${card.pointsPerUsage[index] || 0} points`}
+              />
+              <span className="text-xs text-gray-600 mt-1">
+                {card.pointsPerUsage[index] || 0}
+              </span>
+            </div>
           ))}
         </div>
 
