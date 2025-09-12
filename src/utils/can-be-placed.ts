@@ -1,4 +1,4 @@
-export type TokenType = 'tree' | 'house' | 'water' | 'mountain' | 'field' | 'brown' | 'animal';
+export type TokenType = 'tree' | 'house' | 'water' | 'mountain' | 'field' | 'brown';
 
 export interface Token {
   id: string;
@@ -37,9 +37,6 @@ export const canPlaceToken = (newToken: Token, existingTokens: Token[]): boolean
 
     case 'brown':
       return !['mountain', 'house', 'water', 'field', 'tree'].includes(topToken.type) && existingTokens.length < 3;
-
-    case 'animal':
-      return true; // Animals can be placed on any token (they go on top)
 
     default:
       return false;

@@ -88,8 +88,7 @@ const getTokenColor = (type: TokenType): string => {
     water: '#4A90E2',
     mountain: '#8E8E93',
     field: '#F4D03F',
-    brown: '#8B4513',
-    animal: '#8B4513'
+    brown: '#8B4513'
   };
   return colors[type];
 };

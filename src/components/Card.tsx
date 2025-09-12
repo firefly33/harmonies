@@ -119,8 +119,7 @@ const Card = ({
               mountain: '⛰️',
               tree: '🌳',
               house: '🏠',
-              brown: '🟤',
-              animal: '🐾'
+              brown: '🟤'
             };
             return (
               <div className="text-sm text-center mt-1 text-blue-600 font-medium">
