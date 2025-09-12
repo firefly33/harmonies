@@ -30,8 +30,6 @@ export interface Card {
   // Usage tracking
   maxUsage: number;        // Total number of times this animal can be used
   currentUsage?: number;   // Current number of times used (default: 0)
-  // Points system
-  pointsPerUsage: number[]; // Points awarded for each usage (index = usage number - 1)
 }
 
 // Helper function to get the placement token type for a card

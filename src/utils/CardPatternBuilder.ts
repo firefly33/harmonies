@@ -32,7 +32,6 @@ interface CardBuilder {
   withImage(image: string): CardBuilder;
   withPlacementCell(q: number, r: number): CardBuilder;
   withMaxUsage(maxUsage: number): CardBuilder;
-  withPointsPerUsage(points: number[]): CardBuilder;
   build(): Card;
 }
 
@@ -42,7 +41,6 @@ class CardBuilderImpl implements CardBuilder {
   private image?: string;
   private placementCell?: { q: number; r: number };
   private maxUsage: number = 1;
-  private pointsPerUsage: number[] = [1];
 
   private id: string;
   private animalName: string;
@@ -80,11 +78,6 @@ class CardBuilderImpl implements CardBuilder {
     return this;
   }
 
-  withPointsPerUsage(points: number[]): CardBuilder {
-    this.pointsPerUsage = points;
-    return this;
-  }
-
   build(): Card {
     return {
       id: this.id,
@@ -93,8 +86,7 @@ class CardBuilderImpl implements CardBuilder {
       image: this.image,
       pattern: createCardPattern(this.cells, this.placementCell),
       maxUsage: this.maxUsage,
-      currentUsage: 0,
-      pointsPerUsage: this.pointsPerUsage
+      currentUsage: 0
     };
   }
 }
@@ -154,7 +146,6 @@ export const createQuickCard = (
   animalName: string,
   template: keyof typeof PatternTemplates,
   maxUsage: number = 1,
-  pointsPerUsage: number[] = [1],
   ...args: any[]
 ): Card => {
   const pattern = (PatternTemplates[template] as any)(...args);
@@ -163,8 +154,7 @@ export const createQuickCard = (
     animalName,
     pattern: createCardPattern(pattern, { q: 0, r: 0 }), // Default to center placement
     maxUsage,
-    currentUsage: 0,
-    pointsPerUsage
+    currentUsage: 0
   };
 };
 
@@ -179,9 +169,9 @@ export const ExampleCards = {
     .withDescription('Un prédateur solitaire des rivières et montagnes')
     .build(),
 
-  rabbit: createQuickCard('rabbit', 'Lapin', 'horizontalLine', 3, [2, 4, 6], 'field', 'brown', 'field'),
+  rabbit: createQuickCard('rabbit', 'Lapin', 'horizontalLine', 3, ['field', 'brown', 'field']),
 
-  eagle: createQuickCard('eagle', 'Aigle', 'cross', 2, [5, 10], 'mountain', 'water'),
+  eagle: createQuickCard('eagle', 'Aigle', 'cross', 2, 'mountain', 'water'),
 
   beaver: createAnimalCard('beaver', 'Castor')
     .addCell(0, 0, ['water'])           // Placed on water
