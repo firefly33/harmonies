@@ -2,7 +2,7 @@ import {type ReactElement, useCallback, useEffect, useRef, useState} from 'react
 import { BiWater } from 'react-icons/bi';
 import {LuEarth, LuHouse, LuMountain, LuTrees} from "react-icons/lu";
 import { GiCorn } from 'react-icons/gi';
-import { canPlaceToken, canPlaceAnimalAtPosition, type Token, type TokenType } from '../utils/can-be-placed';
+import { canPlaceToken, type Token, type TokenType } from '../utils/can-be-placed';
 import {calculatePoints, type GridCell, type HexCoord, type PixelCoord} from "../utils/points-calculation.ts";
 import CardsDeck from "./cards-deck/CardsDeck.tsx";
 import { type Card } from "../types/Card.ts";
@@ -67,12 +67,46 @@ const roundHex = (q: number, r: number): HexCoord => {
 };
 
 // Animal pattern placement functions
+const canPlaceAnimalPattern = (card: Card, grid: Map<string, GridCell>, anchorCoord: HexCoord): boolean => {
+  // Check if all pattern cells can be placed at the anchor position
+  for (const patternCell of card.pattern.cells) {
+    // Calculate world position relative to anchor
+    const worldQ = anchorCoord.q + patternCell.coord.q;
+    const worldR = anchorCoord.r + patternCell.coord.r;
+    const worldKey = `${worldQ},${worldR}`;
+
+    const gridCell = grid.get(worldKey);
+    if (!gridCell) return false; // Cell doesn't exist on grid
+
+    // Check if required tokens match what's on the board
+    const requiredTokens = patternCell.tokens;
+    const existingTokens = gridCell.tokens;
+
+    if (requiredTokens.length !== existingTokens.length) return false;
+
+    for (let i = 0; i < requiredTokens.length; i++) {
+      if (requiredTokens[i].type !== existingTokens[i].type) return false;
+    }
+  }
+
+  return true;
+};
 
 const placeAnimalOnBoard = (card: Card, grid: Map<string, GridCell>, anchorCoord: HexCoord): Map<string, GridCell> => {
   const newGrid = new Map(grid);
 
-  // Place animal at the clicked position (anchor coordinate)
-  const animalKey = `${anchorCoord.q},${anchorCoord.r}`;
+  // Find the placement cell (where the animal goes)
+  const placementPattern = card.pattern.cells.find(
+    cell => cell.coord.q === card.pattern.placementCell.q &&
+            cell.coord.r === card.pattern.placementCell.r
+  );
+
+  if (!placementPattern) return newGrid;
+
+  // Calculate world position for animal placement
+  const animalWorldQ = anchorCoord.q + card.pattern.placementCell.q;
+  const animalWorldR = anchorCoord.r + card.pattern.placementCell.r;
+  const animalKey = `${animalWorldQ},${animalWorldR}`;
 
   const targetCell = newGrid.get(animalKey);
   if (!targetCell) return newGrid;
@@ -80,7 +114,7 @@ const placeAnimalOnBoard = (card: Card, grid: Map<string, GridCell>, anchorCoord
   // Create animal token
   const animalToken: Token = {
     id: `animal-${card.id}-${Date.now()}`,
-    type: 'animal',
+    type: 'animal' as any, // We'll need to extend TokenType
     color: '#8B4513' // Brown for animals
   };
 
@@ -210,7 +244,7 @@ const PlayingBoard = () => {
         } else if (selectedToken) {
           strokeColor = '#00FF00'; // Vert pour valid
           lineWidth = 3;
-        } else if (selectedAnimalCard && !canPlaceAnimalAtPosition(selectedAnimalCard, grid, cell.coord)) {
+        } else if (selectedAnimalCard && !canPlaceAnimalPattern(selectedAnimalCard, grid, cell.coord)) {
           strokeColor = '#FF0000'; // Rouge pour pattern invalid
           lineWidth = 3;
         } else if (selectedAnimalCard) {
@@ -319,7 +353,7 @@ const PlayingBoard = () => {
     }
 
     // Handle animal card placement
-    if (selectedAnimalCard && cell && canPlaceAnimalAtPosition(selectedAnimalCard, grid, hexCoord)) {
+    if (selectedAnimalCard && cell && canPlaceAnimalPattern(selectedAnimalCard, grid, hexCoord)) {
       setGrid(prev => placeAnimalOnBoard(selectedAnimalCard, prev, hexCoord));
       setSelectedAnimalCard(null);
       return;
