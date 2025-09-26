@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run linter
+      run: npm run lint
+      continue-on-error: true  # Don't fail CI on linter issues
+
+    - name: Run type check
+      run: npx tsc --noEmit
+
+    - name: Run tests
+      run: npm run test:run
+
+    - name: Build application
+      run: npm run build
+
+    - name: Check build output
+      run: |
+        if [ ! -d "dist" ]; then
+          echo "Build output directory 'dist' not found!"
+          exit 1
+        fi
+        echo "✅ Build completed successfully"
+        echo "Build output size:"
+        du -sh dist/
